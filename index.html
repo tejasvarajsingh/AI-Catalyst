@@ -855,5 +855,89 @@
       });
     });
   </script>
+  <!-- ... (all your existing HTML code above) ... -->
+
+<section id="countdown-section" style="max-width:900px;margin:2.5rem auto 2rem auto;background:var(--surface);border-radius:16px;box-shadow:0 2px 16px rgba(44,62,80,0.07);padding:2rem 1.5rem 2.5rem 1.5rem;position:relative;z-index:1;text-align:center;">
+  <h2 style="color:var(--primary);margin-top:0;margin-bottom:1.2rem;font-weight:700;letter-spacing:1px;">Next Event Countdown</h2>
+  <div id="next-event-name" style="font-size:1.15rem;color:var(--accent);margin-bottom:0.7em;"></div>
+  <div id="countdown-timer" style="font-size:2rem;font-weight:bold;color:var(--primary);"></div>
+  <div id="no-upcoming-event" style="font-size:1.1rem;color:var(--text-soft);display:none;">No upcoming events.</div>
+</section>
+
+<script>
+  // --- Countdown for Next Event ---
+  (function() {
+    // Helper to parse date in format: "Month DD, YYYY"
+    function parseEventDate(str) {
+      // Some browsers may not parse "March 15, 2025" reliably, so do it manually
+      const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      let parts = str.replace(/,/g,'').split(' ');
+      if(parts.length !== 3) return null;
+      let month = months.indexOf(parts[0]);
+      if(month === -1) return null;
+      let day = parseInt(parts[1],10);
+      let year = parseInt(parts[2],10);
+      return new Date(year, month, day, 0, 0, 0);
+    }
+
+    // Find all event dates and names
+    const eventCards = document.querySelectorAll('.event-card');
+    let events = [];
+    eventCards.forEach(card => {
+      let name = card.querySelector('h3')?.textContent.trim();
+      let dateStr = card.querySelector('.date')?.textContent.trim();
+      let dateObj = parseEventDate(dateStr);
+      if (dateObj && !isNaN(dateObj)) {
+        events.push({name, date: dateObj});
+      }
+    });
+
+    // Find the next event
+    let now = new Date();
+    let nextEvent = null;
+    for (let ev of events) {
+      if (ev.date > now) {
+        if (!nextEvent || ev.date < nextEvent.date) nextEvent = ev;
+      }
+    }
+
+    const timerDiv = document.getElementById('countdown-timer');
+    const nameDiv = document.getElementById('next-event-name');
+    const noEventDiv = document.getElementById('no-upcoming-event');
+
+    if (!nextEvent) {
+      timerDiv.style.display = 'none';
+      nameDiv.style.display = 'none';
+      noEventDiv.style.display = '';
+      return;
+    }
+
+    nameDiv.textContent = nextEvent.name + " (" + nextEvent.date.toDateString() + ")";
+
+    function updateCountdown() {
+      let now = new Date();
+      let diff = nextEvent.date - now;
+      if (diff <= 0) {
+        timerDiv.textContent = "Event Started!";
+        clearInterval(interval);
+        return;
+      }
+      let days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      let hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      let minutes = Math.floor((diff / (1000 * 60)) % 60);
+      let seconds = Math.floor((diff / 1000) % 60);
+
+      timerDiv.textContent =
+        (days > 0 ? days + "d " : "") +
+        (hours < 10 ? "0" : "") + hours + "h " +
+        (minutes < 10 ? "0" : "") + minutes + "m " +
+        (seconds < 10 ? "0" : "") + seconds + "s";
+    }
+
+    updateCountdown();
+    let interval = setInterval(updateCountdown, 1000);
+  })();
+</script>
+
 </body>
 </html>
